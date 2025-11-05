@@ -136,6 +136,7 @@ WHISPER_COMPUTE_TYPE = 'float16'  # float16, float32, int8
 ## 使用方法
 
 ### 1. 处理媒体文件
+> python utils/data_process.py
 
 处理输入目录中的所有媒体文件（视频、音频、图片）：
 
@@ -144,7 +145,7 @@ from utils.data_process import process_data, instruct_infer
 
 # 设置输入和输出目录
 in_dir = '/path/to/input/media'
-out_dir = '/path/to/output'
+out_dir = '/path/to/instruct_output'
 
 # 处理媒体文件（分割、识别等）
 process_data(in_dir, out_dir)
@@ -153,7 +154,8 @@ process_data(in_dir, out_dir)
 instruct_infer(out_dir)
 ```
 
-### 2. 生成剪辑项目
+### 2. 生成剪辑JSON
+> python utils/media2simple.py
 
 根据处理后的媒体资源生成剪辑项目配置：
 
@@ -173,127 +175,9 @@ generate_project_from_media(
 )
 ```
 
-### 3. 单独使用语音识别
+### 3. 剪辑JSON输出视频
+> python utils/pack_video.py
 
-```python
-from utils.audio2subtitle import audio2subtitle
-
-# 识别音频/视频文件
-segments = audio2subtitle('/path/to/audio.wav')
-for segment in segments:
-    print(f"{segment['start']:.2f}s - {segment['end']:.2f}s: {segment['text']}")
-```
-
-### 4. 单独使用视频分割
-
-```python
-from utils.video_seg import video_seg
-
-video_path = '/path/to/video.mp4'
-output_dir = '/path/to/output'
-
-media_data = video_seg(video_path, output_dir)
-print(media_data)
-```
-
-## 输出格式
-
-### media.json 格式
-
-处理完成后会生成 `media.json` 文件，包含所有媒体的元数据：
-
-```json
-{
-  "image": {
-    "image1.jpg": {
-      "des": "图片描述"
-    }
-  },
-  "audio": {
-    "audio1.json/0001.wav": {
-      "start": 0.0,
-      "end": 3.5,
-      "text": "识别的文本内容"
-    }
-  },
-  "video": {
-    "video1/0001.mp4": {
-      "start": 0.0,
-      "end": 5.2,
-      "text": "语音识别文本",
-      "des": "视频片段描述"
-    }
-  }
-}
-```
-
-### 项目配置格式
-
-生成的剪辑项目配置格式：
-
-```json
-{
-  "tracks": [
-    {
-      "type": "text",
-      "clips": [
-        [0.0, 8.0, "这是文本内容"],
-        [2.0, 4.0, "文本内容"]
-      ]
-    },
-    {
-      "type": "image",
-      "clips": [
-        [2.5, 6.5, "cutme.png"],
-        [4.8, 8.5, "lv.jpeg"]
-      ]
-    },
-    {
-      "type": "audio",
-      "clips": [
-        [0.0, 3.8, "s1.mp3"],
-        [3.8, 6.0, "s1.wav"]
-      ]
-    },
-    {
-      "type": "video",
-      "clips": [
-        [0.0, 8.5, "1.mp4"]
-      ]
-    }
-  ]
-}
-```
-
-## 工作流程
-
-1. **媒体预处理**
-   - 视频：提取音频 → 语音识别 → 根据识别结果分割视频片段
-   - 音频：语音识别 → 根据识别结果分割音频片段
-   - 图片：直接复制到输出目录
-
-2. **多模态理解**
-   - 使用 Qwen3-VL 模型对视频片段和图片进行描述
-   - 生成包含时间戳、文本和描述的完整元数据
-
-3. **项目生成**
-   - 根据媒体元数据和用户需求
-   - 使用 LLM 生成符合格式要求的剪辑项目配置
-
-## 注意事项
-
-1. **模型路径**：确保 Qwen3-VL 和 Qwen3 模型已正确下载并配置路径
-2. **GPU 内存**：处理大视频文件时注意 GPU 内存使用，代码已包含内存清理机制
-3. **FFmpeg**：确保 FFmpeg 已正确安装并可在命令行访问
-4. **API 密钥**：使用 LLM API 时需要配置正确的 API 密钥
-5. **文件路径**：代码中包含一些硬编码路径，使用前需要根据实际情况修改
-
-## 性能优化
-
-- **批量处理**：支持批量处理多个媒体文件
-- **内存管理**：自动清理 GPU 缓存和临时张量
-- **分辨率缩放**：自动缩放大分辨率视频以节省内存
-- **静音检测**：自动跳过静音片段，提高处理效率
 
 ## 许可证
 

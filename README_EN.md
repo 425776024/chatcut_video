@@ -136,6 +136,7 @@ WHISPER_COMPUTE_TYPE = 'float16'  # float16, float32, int8
 ## Usage
 
 ### 1. Process Media Files
+> python utils/data_process.py
 
 Process all media files (videos, audio, images) in the input directory:
 
@@ -144,7 +145,7 @@ from utils.data_process import process_data, instruct_infer
 
 # Set input and output directories
 in_dir = '/path/to/input/media'
-out_dir = '/path/to/output'
+out_dir = '/path/to/instruct_output'
 
 # Process media files (segmentation, recognition, etc.)
 process_data(in_dir, out_dir)
@@ -153,7 +154,8 @@ process_data(in_dir, out_dir)
 instruct_infer(out_dir)
 ```
 
-### 2. Generate Editing Project
+### 2. Generate Editing Project JSON
+> python utils/media2simple.py
 
 Generate editing project configuration based on processed media resources:
 
@@ -173,127 +175,8 @@ generate_project_from_media(
 )
 ```
 
-### 3. Use Speech Recognition Independently
-
-```python
-from utils.audio2subtitle import audio2subtitle
-
-# Recognize audio/video file
-segments = audio2subtitle('/path/to/audio.wav')
-for segment in segments:
-    print(f"{segment['start']:.2f}s - {segment['end']:.2f}s: {segment['text']}")
-```
-
-### 4. Use Video Segmentation Independently
-
-```python
-from utils.video_seg import video_seg
-
-video_path = '/path/to/video.mp4'
-output_dir = '/path/to/output'
-
-media_data = video_seg(video_path, output_dir)
-print(media_data)
-```
-
-## Output Format
-
-### media.json Format
-
-After processing, a `media.json` file will be generated containing metadata for all media:
-
-```json
-{
-  "image": {
-    "image1.jpg": {
-      "des": "Image description"
-    }
-  },
-  "audio": {
-    "audio1.json/0001.wav": {
-      "start": 0.0,
-      "end": 3.5,
-      "text": "Recognized text content"
-    }
-  },
-  "video": {
-    "video1/0001.mp4": {
-      "start": 0.0,
-      "end": 5.2,
-      "text": "Speech recognition text",
-      "des": "Video segment description"
-    }
-  }
-}
-```
-
-### Project Configuration Format
-
-Generated editing project configuration format:
-
-```json
-{
-  "tracks": [
-    {
-      "type": "text",
-      "clips": [
-        [0.0, 8.0, "This is text content"],
-        [2.0, 4.0, "Text content"]
-      ]
-    },
-    {
-      "type": "image",
-      "clips": [
-        [2.5, 6.5, "cutme.png"],
-        [4.8, 8.5, "lv.jpeg"]
-      ]
-    },
-    {
-      "type": "audio",
-      "clips": [
-        [0.0, 3.8, "s1.mp3"],
-        [3.8, 6.0, "s1.wav"]
-      ]
-    },
-    {
-      "type": "video",
-      "clips": [
-        [0.0, 8.5, "1.mp4"]
-      ]
-    }
-  ]
-}
-```
-
-## Workflow
-
-1. **Media Preprocessing**
-   - Video: Extract audio → Speech recognition → Segment video based on recognition results
-   - Audio: Speech recognition → Segment audio based on recognition results
-   - Image: Directly copy to output directory
-
-2. **Multimodal Understanding**
-   - Use Qwen3-VL model to describe video segments and images
-   - Generate complete metadata including timestamps, text, and descriptions
-
-3. **Project Generation**
-   - Based on media metadata and user requirements
-   - Use LLM to generate editing project configuration in the required format
-
-## Notes
-
-1. **Model Paths**: Ensure Qwen3-VL and Qwen3 models are properly downloaded and paths are configured
-2. **GPU Memory**: Pay attention to GPU memory usage when processing large video files; code includes memory cleanup mechanisms
-3. **FFmpeg**: Ensure FFmpeg is properly installed and accessible from command line
-4. **API Keys**: Configure correct API keys when using LLM APIs
-5. **File Paths**: Code contains some hardcoded paths that need to be modified according to actual usage
-
-## Performance Optimization
-
-- **Batch Processing**: Supports batch processing of multiple media files
-- **Memory Management**: Automatically cleans up GPU cache and temporary tensors
-- **Resolution Scaling**: Automatically scales large resolution videos to save memory
-- **Silence Detection**: Automatically skips silent segments to improve processing efficiency
+### 3. Generate Video from Editing Project JSON
+> python utils/pack_video.py
 
 ## License
 
