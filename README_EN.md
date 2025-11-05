@@ -1,5 +1,7 @@
 # Qwen3 Multimodal Video Processing Project
 
+English | [中文](README.md)
+
 An intelligent video/audio/image processing system based on Qwen3-VL multimodal large language model, supporting automatic speech recognition, video segmentation, media content understanding, and intelligent editing project generation.
 
 ## Features
