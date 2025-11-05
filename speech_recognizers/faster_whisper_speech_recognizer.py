@@ -1,0 +1,71 @@
+import faster_whisper
+
+from .speech_recognizer import SpeechRecognizer
+
+
+class FasterWhisperSpeechRecognizer(SpeechRecognizer):
+    beam_size = 5
+
+    def __init__(
+            self,
+            model_size,
+            device,
+            device_index,
+            compute_type,
+            batch_size=16,
+            beam_size=5,
+    ):
+        super().__init__(model_size, device, device_index=device_index,
+                         compute_type=compute_type,
+                         batch_size=batch_size)
+        if beam_size > 0:
+            self.beam_size = beam_size
+        print(f"加载Whisper模型: {self.model_size}")
+        print(f"device = {self.device}")
+        print(f"{self.model_size, self.device, self.compute_type, self.opts}")
+        if self.device == 'cpu':
+            self.model = faster_whisper.WhisperModel(self.model_size,
+                                                     device=self.device,
+                                                     compute_type=self.compute_type)
+        else:
+            self.model = faster_whisper.WhisperModel(self.model_size,
+                                                     device=self.device,
+                                                     device_index=self.device_index,
+                                                     compute_type=self.compute_type)
+
+    def transcribe(self, audio_path: str):
+        """将音频文件转录为文本"""
+        # 确保音频文件存在
+        self.before_transcribe(audio_path)
+        print(f"get audio data: {audio_path}")
+        print(f"batch size = {self.batch_size}")
+        audio = faster_whisper.decode_audio(audio_path)
+        print("load audio success")
+        segments, info = self.model.transcribe(
+            audio,
+            initial_prompt="Add punctuation after end of each line. 就比如说，我要先去吃饭。Segment at end of each sentence.",
+            word_timestamps=True,  # 启用字词级时间戳
+            vad_filter=True,
+            beam_size=self.beam_size
+        )
+        segment_list = []
+        for segment in segments:
+            segment_data = {
+                'start': float(f'{segment.start:.2f}'),
+                'end': float(f'{segment.end:.2f}'),
+                'text': segment.text
+            }
+            # 如果segment有words属性，添加字词级时间戳
+            if hasattr(segment, 'words') and segment.words:
+                segment_data['words'] = [
+                    {
+                        'word': word.word,
+                        'start': float(f'{word.start:.3f}'),
+                        'end': float(f'{word.end:.3f}'),
+                    }
+                    for word in segment.words
+                ]
+            segment_list.append(segment_data)
+        # format result
+        result = {"language": info.language, "segments": segment_list}
+        return result
